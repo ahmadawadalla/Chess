@@ -1,3 +1,6 @@
+import pygame
+
+
 class King:
     def __init__(self, color):
         self.color = color
@@ -16,3 +19,8 @@ class King:
             self.has_moved = True
             return True
         return False
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/king_b.png')
+        return pygame.image.load('Images/king_w.png')

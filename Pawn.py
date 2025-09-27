@@ -1,3 +1,6 @@
+import pygame
+
+
 class Pawn:
     def __init__(self, color,):
         self.color = color
@@ -66,3 +69,8 @@ class Pawn:
                 return False
             self.has_moved = True
             return True
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/pawn_b.png')
+        return pygame.image.load('Images/pawn_w.png')

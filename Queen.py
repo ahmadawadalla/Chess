@@ -1,3 +1,5 @@
+import pygame
+
 from Rook import Rook
 from Bishop import Bishop
 
@@ -11,3 +13,9 @@ class Queen:
         r = Rook(self.color)
         b = Bishop(self.color)
         return r.is_legal(curr_row,curr_col,next_row,next_col,grid) or b.is_legal(curr_row,curr_col,next_row,next_col,grid)
+
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/queen_b.png')
+        return pygame.image.load('Images/queen_w.png')

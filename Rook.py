@@ -1,3 +1,6 @@
+import pygame
+
+
 class Rook:
     def __init__(self, color):
         self.color = color
@@ -21,3 +24,8 @@ class Rook:
             self.has_moved = True
             return True
         else: return False
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/rook_b.png')
+        return pygame.image.load('Images/rook_w.png')

@@ -1,3 +1,6 @@
+import pygame
+
+
 class Knight:
     def __init__(self, color):
         self.color = color
@@ -14,3 +17,8 @@ class Knight:
             self.has_moved = True
             return True
         return False
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/knight_b.png')
+        return pygame.image.load('Images/knight_w.png')

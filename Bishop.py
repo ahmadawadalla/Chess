@@ -1,3 +1,6 @@
+import pygame
+
+
 class Bishop:
     def __init__(self, color):
         self.color = color
@@ -15,3 +18,8 @@ class Bishop:
                 return False
         self.has_moved = True
         return True
+
+    def get_image(self):
+        if self.color == 'b':
+            return pygame.image.load('Images/bishop_b.png')
+        return pygame.image.load('Images/bishop_w.png')

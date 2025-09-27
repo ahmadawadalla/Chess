@@ -9,6 +9,6 @@ if __name__ == '__main__':
 
     screen = pygame.display.set_mode((GRID_WIDTH,GRID_HEIGHT))
 
-    board = Board()
-    board.draw(screen,GRID_WIDTH,GRID_HEIGHT,CELL_SIZE)
+    board = Board(screen,GRID_WIDTH,GRID_HEIGHT,CELL_SIZE)
+    board.draw()
 
