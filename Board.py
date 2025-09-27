@@ -13,6 +13,7 @@ class Board:
         self.pieces = Piece()
         self.grid = self.pieces.list_of_pieces
         self.selected_piece = None
+        self.move_number = 0
 
     def get_position(self,position): # will output [row,col]
         # position will look like ['f',2]
@@ -65,21 +66,15 @@ class Board:
                             selected_position = new_row,new_col
                             self.selected_piece = new_piece
 
+                        elif old_piece == new_piece:
+                            self.selected_piece = None
+
                         # selecting where to move
                         elif new_piece is None or new_piece.color != old_piece.color:
                             old_row, old_col = selected_position[0], selected_position[1]
                             if self.move(old_row,old_col,new_row,new_col):
                                 self.grid[old_row][old_col] = None
                                 self.selected_piece = None
-
-                        else:
-                            print('error')
-
-
-
-
-
-
 
             row = 0
             for line in self.grid:

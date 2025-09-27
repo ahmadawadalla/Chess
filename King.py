@@ -11,7 +11,7 @@ class King:
         if x_moved > 1 or x_moved < -1 or y_moved > 1 or y_moved < -1:
             return False
 
-        if grid[curr_row - y_moved][curr_col - x_moved] is None:
+        if grid[curr_row - y_moved][curr_col + x_moved] is None:
             self.has_moved = True
             return True
         return False
