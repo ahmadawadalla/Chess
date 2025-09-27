@@ -41,6 +41,9 @@ class Board:
         GREEN = (78,170,45)
         BLUE = (0,0,250)
         YELLOW = (255,255,0)
+        BLACK = (0,0,0)
+
+        font = pygame.font.Font(None,50)
 
         # Game loop
         running = True
@@ -116,6 +119,9 @@ class Board:
 
             row = 0
             for line in self.grid:
+                # start of the row, put the row numbers
+                row_number = font.render(str(8-row),True,BLACK)
+                screen.blit(row_number,(0.05 * CELL_SIZE ** 0.5,(row + 0.05) * CELL_SIZE ** 0.5))
                 col = 0
                 for piece in line:
                     x = (CELL_SIZE **0.5) * col
@@ -170,6 +176,11 @@ class Board:
 
                     col += 1
                 row += 1
+
+            # put the column letters
+            for i in range(8):
+                col_letter = font.render(['a','b','c','d','e','f','g','h'][i],True,BLACK)
+                screen.blit(col_letter,((i + 0.75) * CELL_SIZE ** 0.5, 7.65 * CELL_SIZE ** 0.5))
 
             pygame.display.flip()
 

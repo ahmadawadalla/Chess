@@ -11,3 +11,4 @@ if __name__ == '__main__':
 
     board = Board()
     board.draw(screen,GRID_WIDTH,GRID_HEIGHT,CELL_SIZE)
+
