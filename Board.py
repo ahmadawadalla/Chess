@@ -14,6 +14,7 @@ class Board:
         self.grid = self.pieces.list_of_pieces
         self.selected_piece = None
         self.selected_position = None
+        self.move_positions = None
         self.move_number = 0
 
     def get_position(self,position): # will output [row,col]
@@ -39,6 +40,7 @@ class Board:
         WHITE = (255,255,255)
         GREEN = (78,170,45)
         BLUE = (0,0,250)
+        YELLOW = (255,255,0)
 
         # Game loop
         running = True
@@ -81,9 +83,12 @@ class Board:
                             if self.move(old_row,old_col,new_row,new_col):
                                 self.grid[old_row][old_col] = None
                                 self.move_number += 1
-                                self.selected_piece = None
-                                self.selected_position = None
+                                self.move_positions = [[old_row,old_col],[new_row,new_col]]
+                            self.selected_piece = None
+                            self.selected_position = None
 
+
+            # adding blue marker for selected position
             if self.selected_position:
                 pygame.draw.rect(screen,BLUE,
                                  pygame.Rect(CELL_SIZE ** 0.5 * self.selected_position[1], CELL_SIZE ** 0.5 * self.selected_position[0], CELL_SIZE **0.5, CELL_SIZE ** 0.5)
@@ -97,6 +102,17 @@ class Board:
                     pygame.draw.rect(screen,GREEN,
                                      pygame.Rect(x, y, CELL_SIZE **0.5, CELL_SIZE ** 0.5)
                                      )
+
+            # adding a yellow marker for the previous move
+            if self.move_positions:
+                old_row,old_col = self.move_positions[0]
+                new_row,new_col = self.move_positions[1]
+                pygame.draw.rect(screen,YELLOW,
+                                 pygame.Rect(CELL_SIZE ** 0.5 * old_col, CELL_SIZE ** 0.5 * old_row, CELL_SIZE **0.5, CELL_SIZE ** 0.5)
+                                 )
+                pygame.draw.rect(screen,YELLOW,
+                                 pygame.Rect(CELL_SIZE ** 0.5 * new_col, CELL_SIZE ** 0.5 * new_row, CELL_SIZE **0.5, CELL_SIZE ** 0.5)
+                                 )
 
             row = 0
             for line in self.grid:
