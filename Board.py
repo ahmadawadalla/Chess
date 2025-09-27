@@ -13,6 +13,7 @@ class Board:
         self.pieces = Piece()
         self.grid = self.pieces.list_of_pieces
         self.selected_piece = None
+        self.selected_position = None
         self.move_number = 0
 
     def get_position(self,position): # will output [row,col]
@@ -30,11 +31,14 @@ class Board:
             self.grid[next_row][next_col] = piece
             self.grid[curr_row][curr_col] = None
             return True
-        else: return False
+        else:
+            self.selected_piece = None
+            return False
 
     def draw(self, screen, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE):
         WHITE = (255,255,255)
         GREEN = (78,170,45)
+        BLUE = (0,0,250)
 
         # Game loop
         running = True
@@ -62,19 +66,37 @@ class Board:
                         new_piece = self.grid[new_row][new_col]
 
                         # selecting a piece
-                        if old_piece != new_piece and new_piece is not None:
-                            selected_position = new_row,new_col
+                        if old_piece != new_piece and new_piece is not None and new_piece.color == ['w','b'][self.move_number % 2]:
+                            self.selected_position = new_row,new_col
                             self.selected_piece = new_piece
 
+                        # Unselecting
                         elif old_piece == new_piece:
                             self.selected_piece = None
+                            self.selected_position = None
 
                         # selecting where to move
-                        elif new_piece is None or new_piece.color != old_piece.color:
-                            old_row, old_col = selected_position[0], selected_position[1]
+                        elif new_piece is None or old_piece and new_piece.color != old_piece.color:
+                            old_row, old_col = self.selected_position[0], self.selected_position[1]
                             if self.move(old_row,old_col,new_row,new_col):
                                 self.grid[old_row][old_col] = None
+                                self.move_number += 1
                                 self.selected_piece = None
+                                self.selected_position = None
+
+            if self.selected_position:
+                pygame.draw.rect(screen,BLUE,
+                                 pygame.Rect(CELL_SIZE ** 0.5 * self.selected_position[1], CELL_SIZE ** 0.5 * self.selected_position[0], CELL_SIZE **0.5, CELL_SIZE ** 0.5)
+                                 )
+            else:
+                screen.fill(WHITE)
+                for i in range(4*8):
+                    row = i // 4
+                    x = ((CELL_SIZE **0.5) * 2 * i) % GRID_WIDTH + ((row + 1) % 2) * CELL_SIZE ** 0.5
+                    y = (CELL_SIZE **0.5) * (i//4)
+                    pygame.draw.rect(screen,GREEN,
+                                     pygame.Rect(x, y, CELL_SIZE **0.5, CELL_SIZE ** 0.5)
+                                     )
 
             row = 0
             for line in self.grid:

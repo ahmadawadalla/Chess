@@ -8,7 +8,9 @@ class Knight:
 
         col_moved = next_col - curr_col
         row_moved = next_row - curr_row
-        if [col_moved,row_moved] in legal_moves and grid[curr_row + row_moved][curr_col + col_moved] is None:
+        if ([col_moved,row_moved] in legal_moves and
+                (grid[curr_row + row_moved][curr_col + col_moved] is None or grid[curr_row + row_moved][curr_col + col_moved].color != self.color)
+        ):
             self.has_moved = True
             return True
         return False

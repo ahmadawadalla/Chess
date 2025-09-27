@@ -8,7 +8,7 @@ class Bishop:
         if abs(next_col - curr_col) != abs(next_row - curr_row):
             return False
 
-        for i in range(1,abs(next_col - curr_col) + 1):
+        for i in range(1,abs(next_col - curr_col)):
             row = int(curr_row + (i * (next_row - curr_row)/abs(next_row - curr_row)))
             col = int(curr_col + (i * (next_col - curr_col)/abs(next_col - curr_col)))
             if grid[row][col] is not None:
