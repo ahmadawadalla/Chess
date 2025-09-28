@@ -24,6 +24,7 @@ class Board:
         self.YELLOW = (200,220,10)
         self.LIGHT_YELLOW = (255,255,50)
         self.BLACK = (0,0,0)
+        self.LIGHT_BLACK = (150,150,150)
 
         self.screen = screen
         self.GRID_WIDTH = GRID_WIDTH
@@ -45,6 +46,12 @@ class Board:
         piece = self.grid[curr_row][curr_col]
         piece_moved = piece.has_moved
         piece_before_move = self.grid[next_row][next_col]
+        adj_piece_1 = None
+        adj_piece_2 = None
+        if curr_col < 7:
+            adj_piece_1 = self.grid[curr_row][curr_col + 1]
+        if curr_col > 0:
+            adj_piece_2 = self.grid[curr_row][curr_col - 1]
         moved = False
         if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, False):
             self.grid[next_row][next_col] = piece
@@ -85,12 +92,17 @@ class Board:
                 if piece.is_legal(next_row,next_col,row,col,self.grid, True):
                     available_piece_pos.append((row,col))
 
+        piece.has_moved = piece_moved
         if king_ally_pos in available_enemy_piece_pos:
             self.grid[next_row][next_col] = piece_before_move
             self.grid[curr_row][curr_col] = piece
-            piece.has_moved = piece_moved
+            if isinstance(piece,Pawn):
+                if adj_piece_1:
+                    self.grid[curr_row][curr_col + 1] = adj_piece_1
+                if adj_piece_2:
+                    self.grid[curr_row][curr_col - 1] = adj_piece_2
             moved = False
-        else:
+        elif piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, True):
             #change every piece just_moved to false except for the piece you just moved
             for row in range(8):
                 for col in range(8):
@@ -98,6 +110,8 @@ class Board:
                         self.grid[row][col].just_moved = False
             piece.has_moved = True
             piece.just_moved = True
+            if isinstance(piece,Pawn) and next_row == 0 or next_row == 7:
+                self.draw_pawn_options(next_row, next_col, piece.color)
 
         if king_enemy_pos in available_piece_pos:
             print('Check')
@@ -289,6 +303,79 @@ class Board:
 
         pygame.display.flip()
 
+    def draw_pawn_options(self, pawn_row, pawn_col, color):
+        running = True
+        while running:
+            self.screen.fill(self.WHITE)
+            for i in range(4*8):
+                row = i // 4
+                x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
+                y = (self.CELL_SIZE **0.5) * (i//4)
+                pygame.draw.rect(self.screen,self.GREEN,
+                                 pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                                 )
+
+            row = 0
+            for line in self.grid:
+                # start of the row, put the row numbers
+                row_number = self.font.render(str(8-row),True,self.BLACK)
+                self.screen.blit(row_number,(0.05 * self.CELL_SIZE ** 0.5,(row + 0.05) * self.CELL_SIZE ** 0.5))
+                col = 0
+                for piece in line:
+                    x = (self.CELL_SIZE **0.5) * col
+                    y = (self.CELL_SIZE **0.5) * row
+
+                    if piece:
+                        img = piece.get_image()
+                        self.screen.blit(img,(x,y))
+
+                    col += 1
+                row += 1
+
+            # put the column letters
+            for i in range(8):
+                col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
+                self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
+
+            pygame.draw.rect(self.screen,self.LIGHT_BLACK,
+                             pygame.Rect(self.CELL_SIZE ** 0.5 * 1.5, self.CELL_SIZE ** 0.5 * 2.5, self.CELL_SIZE **0.5 * 5, self.CELL_SIZE ** 0.5 * 2)
+                             )
+
+            queen = Queen(color).get_image()
+            rook = Rook(color).get_image()
+            bishop = Bishop(color).get_image()
+            knight = Knight(color).get_image()
+
+            self.screen.blit(queen,(self.CELL_SIZE ** 0.5 * 2, self.CELL_SIZE ** 0.5 * 3))
+            self.screen.blit(rook,(self.CELL_SIZE ** 0.5 * 3, self.CELL_SIZE ** 0.5 * 3))
+            self.screen.blit(bishop,(self.CELL_SIZE ** 0.5 * 4, self.CELL_SIZE ** 0.5 * 3))
+            self.screen.blit(knight,(self.CELL_SIZE ** 0.5 * 5, self.CELL_SIZE ** 0.5 * 3))
+            pygame.display.flip()
+
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                # Check for mouse button down event
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1: # left mouse click
+                        x,y = event.pos
+                        col = int(x // (self.CELL_SIZE ** 0.5))
+                        row = int(y // (self.CELL_SIZE ** 0.5))
+
+                        if row == 3:
+                            if col == 2: # queen
+                                self.grid[pawn_row][pawn_col] = Queen(color)
+                                running = False
+                            if col == 3: # rook
+                                self.grid[pawn_row][pawn_col] = Rook(color)
+                                running = False
+                            if col == 4: # bishop
+                                self.grid[pawn_row][pawn_col] = Bishop(color)
+                                running = False
+                            if col == 5: # knight
+                                self.grid[pawn_row][pawn_col] = Knight(color)
+                                running = False
 
     def get_cell_color(self,row,col):
         if row % 2 == 0: # even row
