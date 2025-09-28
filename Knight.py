@@ -5,8 +5,10 @@ class Knight:
     def __init__(self, color):
         self.color = color
         self.has_moved = False
+        self.just_moved = False
 
-    def is_legal(self,curr_row,curr_col,next_row,next_col, grid):
+
+    def is_legal(self,curr_row,curr_col,next_row,next_col, grid, do_not_take):
         legal_moves = [[1,2],[-1,2],[1,-2],[-1,-2], [2,-1], [2,1], [-2,-1], [-2,1]] # x,y
 
         col_moved = next_col - curr_col

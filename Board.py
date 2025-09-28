@@ -19,8 +19,10 @@ class Board:
 
         self.WHITE = (255,255,255)
         self.GREEN = (78,170,45)
-        self.BLUE = (0,0,250)
-        self.YELLOW = (255,255,0)
+        self.BLUE = (72,209,204)
+        self.LIGHT_BLUE = (8,232,222)
+        self.YELLOW = (200,220,10)
+        self.LIGHT_YELLOW = (255,255,50)
         self.BLACK = (0,0,0)
 
         self.screen = screen
@@ -41,13 +43,66 @@ class Board:
 
     def move(self, curr_row,curr_col,next_row,next_col):
         piece = self.grid[curr_row][curr_col]
-        if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid):
+        piece_moved = piece.has_moved
+        piece_before_move = self.grid[next_row][next_col]
+        moved = False
+        if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, False):
             self.grid[next_row][next_col] = piece
             self.grid[curr_row][curr_col] = None
-            return True
+            #change every piece just_moved to false except for the piece you just moved
+            for row in range(8):
+                for col in range(8):
+                    if self.grid[row][col]:
+                        self.grid[row][col].just_moved = False
+            piece.just_moved = True
+            moved = True
         else:
             self.selected_piece = None
-            return False
+
+        available_piece_pos = []
+        available_enemy_piece_pos = []
+        for row in range(8):
+            for col in range(8):
+                enemy_piece = self.grid[row][col]
+                if enemy_piece and enemy_piece.color != piece.color:
+                    enemy_piece_moved = enemy_piece.has_moved
+                    # all available enemy positions
+                    for final_row in range(8):
+                        for final_col in range(8):
+                            next_position = self.grid[final_row][final_col]
+                            if (not next_position or next_position.color != enemy_piece.color) and enemy_piece.is_legal(row,col,final_row,final_col,self.grid, True):
+                                available_enemy_piece_pos.append((final_row,final_col))
+                                enemy_piece.has_moved = enemy_piece_moved
+
+                    # position of enemy king
+                    if isinstance(self.grid[row][col],King):
+                        king_enemy_pos = (row,col)
+                # position of ally king
+                if isinstance(self.grid[row][col],King) and self.grid[row][col].color == piece.color:
+                    king_ally_pos = (row,col)
+
+                # available positions for the piece that you just moved
+                if piece.is_legal(next_row,next_col,row,col,self.grid, True):
+                    available_piece_pos.append((row,col))
+
+        if king_ally_pos in available_enemy_piece_pos:
+            self.grid[next_row][next_col] = piece_before_move
+            self.grid[curr_row][curr_col] = piece
+            piece.has_moved = piece_moved
+            moved = False
+        else:
+            #change every piece just_moved to false except for the piece you just moved
+            for row in range(8):
+                for col in range(8):
+                    if self.grid[row][col]:
+                        self.grid[row][col].just_moved = False
+            piece.has_moved = True
+            piece.just_moved = True
+
+        if king_enemy_pos in available_piece_pos:
+            print('Check')
+
+        return moved
 
     def draw(self):
         # Game loop
@@ -104,7 +159,10 @@ class Board:
 
             # adding blue marker for selected position
             if self.selected_position:
-                pygame.draw.rect(self.screen,self.BLUE,
+                blue_color = self.LIGHT_BLUE
+                if self.get_cell_color(self.selected_position[1],self.selected_position[0]) == 'g':
+                    blue_color = self.BLUE
+                pygame.draw.rect(self.screen,blue_color,
                                  pygame.Rect(self.CELL_SIZE ** 0.5 * self.selected_position[1], self.CELL_SIZE ** 0.5 * self.selected_position[0], self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
                                  )
             else:
@@ -121,10 +179,20 @@ class Board:
             if self.move_positions:
                 old_row,old_col = self.move_positions[0]
                 new_row,new_col = self.move_positions[1]
-                pygame.draw.rect(self.screen,self.YELLOW,
+
+                yellow_color = self.LIGHT_YELLOW
+                if self.get_cell_color(old_row,old_col) == 'g':
+                    yellow_color = self.YELLOW
+
+                pygame.draw.rect(self.screen,yellow_color,
                                  pygame.Rect(self.CELL_SIZE ** 0.5 * old_col, self.CELL_SIZE ** 0.5 * old_row, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
                                  )
-                pygame.draw.rect(self.screen,self.YELLOW,
+
+                yellow_color = self.LIGHT_YELLOW
+                if self.get_cell_color(new_row,new_col) == 'g':
+                    yellow_color = self.YELLOW
+
+                pygame.draw.rect(self.screen,yellow_color,
                                  pygame.Rect(self.CELL_SIZE ** 0.5 * new_col, self.CELL_SIZE ** 0.5 * new_row, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
                                  )
 
@@ -202,15 +270,15 @@ class Board:
                 row += 1
 
             if not isinstance(piece,Knight):
-                curr_x += 2*x_direction
-                curr_y += 2*y_direction
+                curr_x += 2*x_direction * (25/4)
+                curr_y += 2*y_direction * (25/4)
             else:
                 if abs(x_moved) > abs(y_moved): # moves in x direction more
-                    curr_x += 4*x_direction
-                    curr_y += 2*y_direction
-                else: # moves in y direction more
-                    curr_x += 2*x_direction
+                    curr_x += 8*x_direction
                     curr_y += 4*y_direction
+                else: # moves in y direction more
+                    curr_x += 4*x_direction
+                    curr_y += 8*y_direction
 
             pygame.display.flip()
 
@@ -222,6 +290,14 @@ class Board:
         pygame.display.flip()
 
 
-
-
-
+    def get_cell_color(self,row,col):
+        if row % 2 == 0: # even row
+            if col % 2 == 0: # even col
+                return 'w' # is white
+            else: # odd col
+                return 'g' # is green
+        else: # odd row
+            if col % 2 == 0: # even col
+                return 'g' # is green
+            else: # odd col
+                return 'w' # is white

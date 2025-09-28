@@ -5,8 +5,10 @@ class Rook:
     def __init__(self, color):
         self.color = color
         self.has_moved = False
+        self.just_moved = False
 
-    def is_legal(self,curr_row,curr_col,next_row,next_col, grid):
+
+    def is_legal(self,curr_row,curr_col,next_row,next_col, grid, do_not_take):
         if curr_col == next_col and curr_row != next_row:
             # y-direction
             for i in range(1,abs(curr_row - next_row)):
