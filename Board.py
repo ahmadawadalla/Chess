@@ -16,6 +16,7 @@ class Board:
         self.selected_position = None
         self.move_positions = None
         self.move_number = 0
+        self.possible_moves = []
 
         self.WHITE = (255,255,255)
         self.GREEN = (78,170,45)
@@ -25,6 +26,8 @@ class Board:
         self.LIGHT_YELLOW = (255,255,50)
         self.BLACK = (0,0,0)
         self.LIGHT_BLACK = (150,150,150)
+        self.GRAY = (211,211,211)
+        self.RED = (255,0,0)
 
         self.screen = screen
         self.GRID_WIDTH = GRID_WIDTH
@@ -42,9 +45,10 @@ class Board:
         return [row,col]
 
 
-    def move(self, curr_row,curr_col,next_row,next_col):
+    def move(self, curr_row,curr_col,next_row,next_col, do_not_move):
         piece = self.grid[curr_row][curr_col]
         piece_moved = piece.has_moved
+
         piece_before_move = self.grid[next_row][next_col]
         adj_piece_1 = None
         adj_piece_2 = None
@@ -56,15 +60,21 @@ class Board:
         if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, False):
             self.grid[next_row][next_col] = piece
             self.grid[curr_row][curr_col] = None
-            #change every piece just_moved to false except for the piece you just moved
-            for row in range(8):
-                for col in range(8):
-                    if self.grid[row][col]:
-                        self.grid[row][col].just_moved = False
-            piece.just_moved = True
+            if not do_not_move:
+                self.possible_moves = []
+
+                #change every piece just_moved to false except for the piece you just moved
+                for row in range(8):
+                    for col in range(8):
+                        if self.grid[row][col]:
+                            self.grid[row][col].just_moved = False
+                piece.just_moved = True
+
             moved = True
-        else:
+        elif not do_not_move:
             self.selected_piece = None
+            self.possible_moves = []
+
 
         available_piece_pos = []
         available_enemy_piece_pos = []
@@ -73,13 +83,19 @@ class Board:
                 enemy_piece = self.grid[row][col]
                 if enemy_piece and enemy_piece.color != piece.color:
                     enemy_piece_moved = enemy_piece.has_moved
+                    if isinstance(enemy_piece,Pawn):
+                        enemy_moved_two = enemy_piece.moved_up_two
                     # all available enemy positions
+                    # if it is of type pawn, then change moved_up_two back to original
+
                     for final_row in range(8):
                         for final_col in range(8):
                             next_position = self.grid[final_row][final_col]
                             if (not next_position or next_position.color != enemy_piece.color) and enemy_piece.is_legal(row,col,final_row,final_col,self.grid, True):
                                 available_enemy_piece_pos.append((final_row,final_col))
                                 enemy_piece.has_moved = enemy_piece_moved
+                                if isinstance(enemy_piece,Pawn):
+                                    enemy_piece.moved_up_two = enemy_moved_two
 
                     # position of enemy king
                     if isinstance(self.grid[row][col],King):
@@ -102,19 +118,29 @@ class Board:
                 if adj_piece_2:
                     self.grid[curr_row][curr_col - 1] = adj_piece_2
             moved = False
-        elif piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, True):
+
+        elif piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, True) and not do_not_move:
             #change every piece just_moved to false except for the piece you just moved
             for row in range(8):
                 for col in range(8):
                     if self.grid[row][col]:
                         self.grid[row][col].just_moved = False
-            piece.has_moved = True
-            piece.just_moved = True
-            if isinstance(piece,Pawn) and next_row == 0 or next_row == 7:
+
+            if isinstance(piece,Pawn) and (next_row == 0 or next_row == 7):
                 self.draw_pawn_options(next_row, next_col, piece.color)
 
-        if king_enemy_pos in available_piece_pos:
-            print('Check')
+        if moved and not do_not_move:
+            piece.has_moved = True
+            piece.just_moved = True
+
+        if do_not_move:
+            self.grid[next_row][next_col] = piece_before_move
+            self.grid[curr_row][curr_col] = piece
+            if isinstance(piece,Pawn):
+                if adj_piece_1:
+                    self.grid[curr_row][curr_col + 1] = adj_piece_1
+                if adj_piece_2:
+                    self.grid[curr_row][curr_col - 1] = adj_piece_2
 
         return moved
 
@@ -145,9 +171,23 @@ class Board:
                         new_piece = self.grid[new_row][new_col]
 
                         # selecting a piece
-                        if old_piece != new_piece and new_piece is not None and new_piece.color == ['w','b'][self.move_number % 2]:
+                        if old_piece != new_piece and new_piece and new_piece.color == ['w','b'][self.move_number % 2]:
                             self.selected_position = new_row,new_col
                             self.selected_piece = new_piece
+                            self.possible_moves = []
+
+                            moved = new_piece.has_moved
+                            if isinstance(new_piece,Pawn):
+                                moved_two = new_piece.moved_up_two
+
+                            # get all possible moves that that piece can move
+                            for i in range(8):
+                                for j in range(8):
+                                    if new_piece.is_legal(new_row,new_col,i,j,self.grid,True) and ((self.grid[i][j] and self.grid[i][j].color != new_piece.color) or not self.grid[i][j]):
+                                        self.possible_moves.append((i,j))
+                                        new_piece.has_moved = moved
+                                        if isinstance(new_piece,Pawn):
+                                            new_piece.moved_up_two = moved_two
 
                         # Unselecting
                         elif old_piece == new_piece:
@@ -162,14 +202,13 @@ class Board:
                             new_x = new_col * self.CELL_SIZE ** 0.5
                             new_y = new_row * self.CELL_SIZE ** 0.5
 
-                            if self.move(old_row,old_col,new_row,new_col):
+                            if self.move(old_row,old_col,new_row,new_col, False):
                                 self.draw_movement(self.screen,self.selected_piece, old_x, old_y, new_x, new_y)
                                 self.grid[old_row][old_col] = None
                                 self.move_number += 1
                                 self.move_positions = [[old_row,old_col],[new_row,new_col]]
                             self.selected_piece = None
                             self.selected_position = None
-
 
             # adding blue marker for selected position
             if self.selected_position:
@@ -179,6 +218,7 @@ class Board:
                 pygame.draw.rect(self.screen,blue_color,
                                  pygame.Rect(self.CELL_SIZE ** 0.5 * self.selected_position[1], self.CELL_SIZE ** 0.5 * self.selected_position[0], self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
                                  )
+
             else:
                 self.screen.fill(self.WHITE)
                 for i in range(4*8):
@@ -210,6 +250,7 @@ class Board:
                                  pygame.Rect(self.CELL_SIZE ** 0.5 * new_col, self.CELL_SIZE ** 0.5 * new_row, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
                                  )
 
+
             row = 0
             for line in self.grid:
                 # start of the row, put the row numbers
@@ -231,6 +272,16 @@ class Board:
             for i in range(8):
                 col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
                 self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
+
+
+            if self.selected_position:
+                for i in self.possible_moves:
+                    if self.move(self.selected_position[0],self.selected_position[1],i[0],i[1],True):
+                        if self.grid[i[0]][i[1]] and self.grid[i[0]][i[1]].color != self.selected_piece.color:
+                            pygame.draw.circle(self.screen,self.RED, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//3),6)
+                        elif not self.grid[i[0]][i[1]]:
+                            pygame.draw.circle(self.screen,self.GRAY, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//6))
+
 
             pygame.display.flip()
 
@@ -293,8 +344,6 @@ class Board:
                 else: # moves in y direction more
                     curr_x += 4*x_direction
                     curr_y += 8*y_direction
-
-            pygame.display.flip()
 
         # put the column letters
         for i in range(8):
