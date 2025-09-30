@@ -255,7 +255,9 @@ class Board:
                             self.selected_piece = None
                             self.selected_position = None
 
-                if event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
                     if event.key == pygame.K_LEFT: # go back a move
                         if self.move_number >= 1:
                             self.move_number -= 1
