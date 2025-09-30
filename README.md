@@ -13,6 +13,7 @@ Supports all standard chess rules including **castling, en passant, pawn promoti
   - Queen
   - King (**castling with check validation**)
 - Turn-based play (white vs black)
+- - **Pass n’ Play**: After each turn, the board automatically flips to face the next player, making it easy to share the same device for local multiplayer.
 - **Move highlighting** (possible moves shown on the board as well as the last move the user made)
 - **Pawn promotion menu** (choose queen, rook, bishop, knight)
 - **Undo / Redo** support with arrow keys
@@ -46,6 +47,7 @@ pip install pygame
 ---
 
 ## 🎮 Controls
+- The board will switch orientation at the end of each move so the next player sees the board from their perspective.
 - **Left-click** a piece to select it.
 - **Left-click** a square to move.
 - **Undo/Redo**:

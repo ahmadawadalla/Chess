@@ -14,4 +14,3 @@ if __name__ == '__main__':
     pygame.mixer.Sound.play(start_noise)
     board = Board(screen,GRID_WIDTH,GRID_HEIGHT,CELL_SIZE)
     board.draw()
-

@@ -170,14 +170,24 @@ class Board:
         self.all_moves.append(self.get_grid_by_value(self.grid,8,8))
         self.all_move_positions.append(None)
         while running:
+            flip = self.move_number % 2 == 1
             self.screen.fill(self.WHITE)
-            for i in range(4*8):
-                row = i // 4
-                x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                y = (self.CELL_SIZE **0.5) * (i//4)
-                pygame.draw.rect(self.screen,self.GREEN,
-                                 pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
+            if flip:
+                for i in range(4*8):
+                    row = i // 4
+                    x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row) % 2) * self.CELL_SIZE ** 0.5
+                    y = (self.CELL_SIZE **0.5) * (i//4)
+                    pygame.draw.rect(self.screen,self.GREEN,
+                                     pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                                     )
+            else:
+                for i in range(4*8):
+                    row = i // 4
+                    x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
+                    y = (self.CELL_SIZE **0.5) * (i//4)
+                    pygame.draw.rect(self.screen,self.GREEN,
+                                     pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                                     )
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -187,8 +197,12 @@ class Board:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1: # left mouse click
                         x,y = event.pos
-                        new_col = int(x // (self.CELL_SIZE ** 0.5))
-                        new_row = int(y // (self.CELL_SIZE ** 0.5))
+                        if flip:
+                            new_col = 7 - int(x // (self.CELL_SIZE ** 0.5))
+                            new_row = 7 - int(y // (self.CELL_SIZE ** 0.5))
+                        else:
+                            new_col = int(x // (self.CELL_SIZE ** 0.5))
+                            new_row = int(y // (self.CELL_SIZE ** 0.5))
                         old_piece = self.selected_piece
                         new_piece = self.grid[new_row][new_col]
 
@@ -282,61 +296,88 @@ class Board:
 
             # adding blue marker for selected position
             if self.selected_position:
+                row, col = self.selected_position
+
+                # Flip the coordinates if needed
+                draw_row = 7 - row if flip else row
+                draw_col = 7 - col if flip else col
+
                 blue_color = self.LIGHT_BLUE
-                if self.get_cell_color(self.selected_position[1],self.selected_position[0]) == 'g':
+                if self.get_cell_color(col, row) == 'g':
                     blue_color = self.BLUE
-                pygame.draw.rect(self.screen,blue_color,
-                                 pygame.Rect(self.CELL_SIZE ** 0.5 * self.selected_position[1], self.CELL_SIZE ** 0.5 * self.selected_position[0], self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
+
+                pygame.draw.rect(
+                    self.screen,
+                    blue_color,
+                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_col, self.CELL_SIZE ** 0.5 * draw_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
+                )
 
             else:
                 self.screen.fill(self.WHITE)
-                for i in range(4*8):
-                    row = i // 4
-                    x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                    y = (self.CELL_SIZE **0.5) * (i//4)
-                    pygame.draw.rect(self.screen,self.GREEN,
-                                     pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                     )
+                if flip:
+                    for i in range(4*8):
+                        row = i // 4
+                        x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row) % 2) * self.CELL_SIZE ** 0.5
+                        y = (self.CELL_SIZE **0.5) * (i//4)
+                        pygame.draw.rect(self.screen,self.GREEN,
+                                         pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                                         )
+                else:
+                    for i in range(4*8):
+                        row = i // 4
+                        x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
+                        y = (self.CELL_SIZE **0.5) * (i//4)
+                        pygame.draw.rect(self.screen,self.GREEN,
+                                         pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                                         )
 
             # adding a yellow marker for the previous move
             if self.move_positions and self.move_number > 0:
-                old_row,old_col = self.move_positions[0]
-                new_row,new_col = self.move_positions[1]
+                flip = (self.move_number % 2 == 1)  # black’s turn → flipped
 
+                old_row, old_col = self.move_positions[0]
+                new_row, new_col = self.move_positions[1]
+
+                # Flip coords if needed
+                draw_old_row = 7 - old_row if flip else old_row
+                draw_old_col = 7 - old_col if flip else old_col
+                draw_new_row = 7 - new_row if flip else new_row
+                draw_new_col = 7 - new_col if flip else new_col
+
+                # Draw old square
                 yellow_color = self.LIGHT_YELLOW
-                if self.get_cell_color(old_row,old_col) == 'g':
+                if self.get_cell_color(old_row, old_col) == 'g':
                     yellow_color = self.YELLOW
 
-                pygame.draw.rect(self.screen,yellow_color,
-                                 pygame.Rect(self.CELL_SIZE ** 0.5 * old_col, self.CELL_SIZE ** 0.5 * old_row, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
+                pygame.draw.rect(self.screen, yellow_color,
+                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_old_col, self.CELL_SIZE ** 0.5 * draw_old_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
+                )
 
+                # Draw new square
                 yellow_color = self.LIGHT_YELLOW
-                if self.get_cell_color(new_row,new_col) == 'g':
+                if self.get_cell_color(new_row, new_col) == 'g':
                     yellow_color = self.YELLOW
 
-                pygame.draw.rect(self.screen,yellow_color,
-                                 pygame.Rect(self.CELL_SIZE ** 0.5 * new_col, self.CELL_SIZE ** 0.5 * new_row, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
+                pygame.draw.rect(self.screen, yellow_color,
+                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_new_col, self.CELL_SIZE ** 0.5 * draw_new_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
+                )
 
 
-            row = 0
-            for line in self.grid:
-                # start of the row, put the row numbers
-                row_number = self.font.render(str(8-row),True,self.BLACK)
-                self.screen.blit(row_number,(0.05 * self.CELL_SIZE ** 0.5,(row + 0.05) * self.CELL_SIZE ** 0.5))
-                col = 0
-                for piece in line:
-                    x = (self.CELL_SIZE **0.5) * col
-                    y = (self.CELL_SIZE **0.5) * row
+
+            for row in range(8):
+                for col in range(8):
+                    piece = self.grid[row][col]
+
+                    # If flipping, invert row/col
+                    draw_row = 7 - row if flip else row
+                    draw_col = 7 - col if flip else col
+
+                    x = (self.CELL_SIZE ** 0.5) * draw_col
+                    y = (self.CELL_SIZE ** 0.5) * draw_row
 
                     if piece:
                         img = piece.get_image()
-                        self.screen.blit(img,(x,y))
-
-                    col += 1
-                row += 1
+                        self.screen.blit(img, (x, y))
 
             # put the column letters
             for i in range(8):
@@ -345,12 +386,26 @@ class Board:
 
 
             if self.selected_position:
+                flip = (self.move_number % 2 == 1)  # flip when black’s turn
+                sel_row, sel_col = self.selected_position
+
                 for i in self.possible_moves:
-                    if self.move(self.selected_position[0],self.selected_position[1],i[0],i[1],True):
-                        if self.grid[i[0]][i[1]] and self.grid[i[0]][i[1]].color != self.selected_piece.color:
-                            pygame.draw.circle(self.screen,self.RED, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//3),6)
-                        elif not self.grid[i[0]][i[1]]:
-                            pygame.draw.circle(self.screen,self.GRAY, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//6))
+                    row, col = i
+
+                    if self.move(sel_row, sel_col, row, col, True):
+                        # Flip coords for drawing
+                        draw_row = 7 - row if flip else row
+                        draw_col = 7 - col if flip else col
+
+                        x = int(self.CELL_SIZE ** 0.5 * draw_col + 50)
+                        y = int(self.CELL_SIZE ** 0.5 * draw_row + 50)
+
+                        if self.grid[row][col] and self.grid[row][col].color != self.selected_piece.color:
+                            # Enemy piece → red circle
+                            pygame.draw.circle(self.screen, self.RED, (x, y), int(self.CELL_SIZE ** 0.5 // 3), 6)
+                        elif not self.grid[row][col]:
+                            # Empty square → gray circle
+                            pygame.draw.circle(self.screen, self.GRAY, (x, y), int(self.CELL_SIZE ** 0.5 // 6))
 
 
 
