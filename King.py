@@ -13,6 +13,32 @@ class King:
         x_moved = next_col - curr_col
         y_moved = -1 * (next_row - curr_row)
 
+        if not self.has_moved and next_row == curr_row:
+            if next_col == 2 and grid[curr_row][0] and not grid[curr_row][0].has_moved:
+                for i in range(1,3):
+                    if grid[curr_row][curr_col - i]:
+                        return False
+
+                if not do_not_take: # move the rook
+                    grid[curr_row][3] = grid[curr_row][0]
+                    grid[curr_row][0] = None
+
+
+                self.has_moved = True
+                return True
+
+            elif next_col == 6 and grid[curr_row][7] and not grid[curr_row][7].has_moved:
+                for i in range(1,3):
+                    if grid[curr_row][curr_col + i]:
+                        return False
+
+                if not do_not_take: # move the rook
+                    grid[curr_row][5] = grid[curr_row][7]
+                    grid[curr_row][7] = None
+
+                self.has_moved = True
+                return True
+
         if x_moved > 1 or x_moved < -1 or y_moved > 1 or y_moved < -1:
             return False
 

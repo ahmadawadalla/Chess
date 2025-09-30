@@ -57,7 +57,13 @@ class Board:
         if curr_col > 0:
             adj_piece_2 = self.grid[curr_row][curr_col - 1]
         moved = False
-        if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, False):
+
+        can_castle = False
+        if isinstance(piece, King) and not piece_moved:
+            can_castle = True
+            castle_row = (self.grid[curr_row])[:]
+
+        if piece.is_legal(curr_row,curr_col,next_row,next_col, self.grid, False or (isinstance(self.grid[curr_row][curr_col],King) and do_not_move)):
             self.grid[next_row][next_col] = piece
             self.grid[curr_row][curr_col] = None
             if not do_not_move:
@@ -109,6 +115,13 @@ class Board:
                     available_piece_pos.append((row,col))
 
         piece.has_moved = piece_moved
+        if can_castle and not piece_moved and (next_col == 2 or next_col == 6) :
+            col_dir = int((next_col - curr_col)/abs(next_col - curr_col))
+            if (curr_row,curr_col + col_dir * 2) in available_enemy_piece_pos or (curr_row,curr_col) in available_enemy_piece_pos or (curr_row,curr_col + col_dir) in available_enemy_piece_pos:
+                moved = False
+            if not moved:
+                self.grid[curr_row] = castle_row
+
         if king_ally_pos in available_enemy_piece_pos:
             self.grid[next_row][next_col] = piece_before_move
             self.grid[curr_row][curr_col] = piece
@@ -141,6 +154,7 @@ class Board:
                     self.grid[curr_row][curr_col + 1] = adj_piece_1
                 if adj_piece_2:
                     self.grid[curr_row][curr_col - 1] = adj_piece_2
+            piece.has_moved = piece_moved
 
         return moved
 
@@ -176,18 +190,21 @@ class Board:
                             self.selected_piece = new_piece
                             self.possible_moves = []
 
-                            moved = new_piece.has_moved
+                            moved = self.selected_piece.has_moved
                             if isinstance(new_piece,Pawn):
                                 moved_two = new_piece.moved_up_two
 
                             # get all possible moves that that piece can move
                             for i in range(8):
                                 for j in range(8):
+                                    self.selected_piece.has_moved = moved
+
                                     if new_piece.is_legal(new_row,new_col,i,j,self.grid,True) and ((self.grid[i][j] and self.grid[i][j].color != new_piece.color) or not self.grid[i][j]):
                                         self.possible_moves.append((i,j))
-                                        new_piece.has_moved = moved
                                         if isinstance(new_piece,Pawn):
                                             new_piece.moved_up_two = moved_two
+
+                            self.selected_piece.has_moved = moved
 
                         # Unselecting
                         elif old_piece == new_piece:
@@ -281,6 +298,7 @@ class Board:
                             pygame.draw.circle(self.screen,self.RED, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//3),6)
                         elif not self.grid[i[0]][i[1]]:
                             pygame.draw.circle(self.screen,self.GRAY, (int(self.CELL_SIZE ** 0.5 * i[1] + 50), int(self.CELL_SIZE ** 0.5 * i[0] + 50)), int(self.CELL_SIZE **0.5//6))
+
 
 
             pygame.display.flip()
