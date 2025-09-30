@@ -252,8 +252,8 @@ class Board:
                                 self.all_selected_pieces.insert(self.move_number,self.selected_piece)
                                 self.all_selected_pieces = self.all_selected_pieces[:self.move_number + 1]
 
-                                self.selected_piece = None
-                                self.selected_position = None
+                            self.selected_piece = None
+                            self.selected_position = None
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT: # go back a move
