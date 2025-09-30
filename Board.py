@@ -1,3 +1,5 @@
+import copy
+
 from Pawn import Pawn
 from Knight import Knight
 from Bishop import Bishop
@@ -17,6 +19,10 @@ class Board:
         self.move_positions = None
         self.move_number = 0
         self.possible_moves = []
+        self.all_moves = []
+        self.all_move_positions = []
+        self.all_selected_positions = []
+        self.all_selected_pieces = []
 
         self.WHITE = (255,255,255)
         self.GREEN = (78,170,45)
@@ -161,6 +167,8 @@ class Board:
     def draw(self):
         # Game loop
         running = True
+        self.all_moves.append(self.get_grid_by_value(self.grid,8,8))
+        self.all_move_positions.append(None)
         while running:
             self.screen.fill(self.WHITE)
             for i in range(4*8):
@@ -218,14 +226,57 @@ class Board:
                             old_y = self.selected_position[0] * self.CELL_SIZE ** 0.5
                             new_x = new_col * self.CELL_SIZE ** 0.5
                             new_y = new_row * self.CELL_SIZE ** 0.5
+                            check_if_captured = self.grid[new_row][new_col]
 
                             if self.move(old_row,old_col,new_row,new_col, False):
                                 self.draw_movement(self.screen,self.selected_piece, old_x, old_y, new_x, new_y)
+                                if check_if_captured:
+                                    move_noise = pygame.mixer.Sound("Sounds/capture.mp3")
+                                else:
+                                    move_noise = pygame.mixer.Sound("Sounds/move-self.mp3")
+
+                                pygame.mixer.Sound.play(move_noise)
+
                                 self.grid[old_row][old_col] = None
                                 self.move_number += 1
+                                self.all_moves.insert(self.move_number,self.get_grid_by_value(self.grid,8,8))
+                                self.all_moves = self.all_moves[:self.move_number + 1]
+
                                 self.move_positions = [[old_row,old_col],[new_row,new_col]]
-                            self.selected_piece = None
+                                self.all_move_positions.insert(self.move_number,[[old_row,old_col],[new_row,new_col]])
+                                self.all_move_positions = self.all_move_positions[:self.move_number + 1]
+
+                                self.all_selected_positions.insert(self.move_number,self.selected_position)
+                                self.all_selected_positions = self.all_selected_positions[:self.move_number + 1]
+
+                                self.all_selected_pieces.insert(self.move_number,self.selected_piece)
+                                self.all_selected_pieces = self.all_selected_pieces[:self.move_number + 1]
+
+                                self.selected_piece = None
+                                self.selected_position = None
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT: # go back a move
+                        if self.move_number >= 1:
+                            self.move_number -= 1
+                            self.grid = self.get_grid_by_value(self.all_moves[self.move_number],8,8)
+                            if self.all_move_positions[self.move_number] == None:
+                                self.move_positions = None
+                            else:
+                                self.move_positions = self.get_grid_by_value(self.all_move_positions[self.move_number],2,2)
                             self.selected_position = None
+                            self.selected_piece = None
+
+                    if event.key == pygame.K_RIGHT: # go forward a move
+                        if self.move_number + 1 < len(self.all_moves):
+                            self.move_number += 1
+                            self.grid = self.get_grid_by_value(self.all_moves[self.move_number],8,8)
+                            self.move_positions = self.get_grid_by_value(self.all_move_positions[self.move_number],2,2)
+                            self.selected_position = None
+                            self.selected_piece = None
+
+
+
 
             # adding blue marker for selected position
             if self.selected_position:
@@ -247,7 +298,7 @@ class Board:
                                      )
 
             # adding a yellow marker for the previous move
-            if self.move_positions:
+            if self.move_positions and self.move_number > 0:
                 old_row,old_col = self.move_positions[0]
                 new_row,new_col = self.move_positions[1]
 
@@ -455,3 +506,13 @@ class Board:
                 return 'g' # is green
             else: # odd col
                 return 'w' # is white
+
+    def get_grid_by_value(self,grid, num_row, num_col):
+        array = []
+        for row in range(num_row):
+            line = []
+            for col in range(num_col):
+                line.append(copy.deepcopy(grid[row][col]))
+            array.append(line)
+
+        return array
