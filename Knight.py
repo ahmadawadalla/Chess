@@ -1,12 +1,17 @@
-import pygame
+import pygame, os, sys
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works in dev and when bundled"""
+    if hasattr(sys, "_MEIPASS"):
+        # PyInstaller stores files here
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 class Knight:
     def __init__(self, color):
         self.color = color
         self.has_moved = False
         self.just_moved = False
-
 
     def is_legal(self,curr_row,curr_col,next_row,next_col, grid, do_not_take):
         legal_moves = [[1,2],[-1,2],[1,-2],[-1,-2], [2,-1], [2,1], [-2,-1], [-2,1]] # x,y
@@ -22,5 +27,5 @@ class Knight:
 
     def get_image(self):
         if self.color == 'b':
-            return pygame.image.load('Images/knight_b.png')
-        return pygame.image.load('Images/knight_w.png')
+            return pygame.image.load(resource_path('Images/knight_b.png'))
+        return pygame.image.load(resource_path('Images/knight_w.png'))

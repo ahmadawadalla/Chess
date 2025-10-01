@@ -4,7 +4,23 @@ A fully playable **Chess game** built in Python using **Pygame**.
 Supports all standard chess rules including **castling, en passant, pawn promotion**, and features an **undo/redo system** for move history navigation.
 
 ---
-# Features
+
+## 📥 Download Executable
+
+You don’t need Python to play! Download the packaged app for your platform:
+
+- **macOS (Apple Silicon)** → [ChessGame.app.zip](https://github.com/ahmadawadalla/Chess/releases/latest/download/ChessGame.app.zip)  
+- **Windows** → (coming soon)  
+- **Linux** → (coming soon)
+
+👉 On macOS, if you see a security warning the first time you open it, right-click → **Open**, or run:
+```bash
+xattr -cr ChessGame.app
+```
+
+---
+
+## ✨ Features
 - All standard chess pieces with correct movement rules:
   - Pawn (**en passant**, promotion)
   - Rook
@@ -13,7 +29,7 @@ Supports all standard chess rules including **castling, en passant, pawn promoti
   - Queen
   - King (**castling with check validation**)
 - Turn-based play (white vs black)
-- - **Pass n’ Play**: After each turn, the board automatically flips to face the next player, making it easy to share the same device for local multiplayer.
+- **Pass n’ Play**: After each turn, the board automatically flips to face the next player, making it easy to share the same device for local multiplayer.
 - **Move highlighting** (possible moves shown on the board as well as the last move the user made)
 - **Pawn promotion menu** (choose queen, rook, bishop, knight)
 - **Undo / Redo** support with arrow keys
@@ -22,7 +38,7 @@ Supports all standard chess rules including **castling, en passant, pawn promoti
 
 ---
 
-## 🖥️ Requirements
+## 🖥️ Requirements (for running from source)
 - Python 3.8+
 - [Pygame](https://www.pygame.org/)
 
@@ -33,7 +49,7 @@ pip install pygame
 
 ---
 
-## ▶️ How to Run
+## ▶️ How to Run from Source
 1. Clone this repo:
    ```bash
    git clone https://github.com/ahmadawadalla/Chess.git

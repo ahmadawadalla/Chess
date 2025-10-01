@@ -1,4 +1,3 @@
-import copy
 import time
 
 from Pawn import Pawn
@@ -8,8 +7,14 @@ from Rook import Rook
 from Queen import Queen
 from King import King
 from Piece import Piece
+import os, sys, copy, pygame
 
-import pygame
+def resource_path(relative_path):
+    """Get absolute path to resource, works in dev and when bundled"""
+    if hasattr(sys, "_MEIPASS"):
+        # PyInstaller stores files here
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 class Board:
     def __init__(self, screen,GRID_WIDTH,GRID_HEIGHT,CELL_SIZE):
@@ -42,7 +47,6 @@ class Board:
         self.CELL_SIZE = CELL_SIZE
 
         self.font = pygame.font.Font(None,50)
-        self.time_moved = time.time() - 2
 
     def get_position(self,position): # will output [row,col]
         # position will look like ['f',2]
@@ -226,14 +230,15 @@ class Board:
 
                             if self.move(old_row,old_col,new_row,new_col, False):
                                 if check_if_captured:
-                                    move_noise = pygame.mixer.Sound("Sounds/capture.mp3")
+                                    move_noise = pygame.mixer.Sound(resource_path("Sounds/capture.mp3"))
                                 else:
-                                    move_noise = pygame.mixer.Sound("Sounds/move-self.mp3")
+                                    move_noise = pygame.mixer.Sound(resource_path("Sounds/move-self.mp3"))
 
                                 pygame.mixer.Sound.play(move_noise)
 
                                 self.grid[old_row][old_col] = None
                                 self.move_number += 1
+
                                 self.all_moves.insert(self.move_number,self.get_grid_by_value(self.grid,8,8))
                                 self.all_moves = self.all_moves[:self.move_number + 1]
 
@@ -272,9 +277,6 @@ class Board:
                             self.selected_position = None
                             self.selected_piece = None
 
-
-
-
             # adding blue marker for selected position
             if self.selected_position:
                 row, col = self.selected_position
@@ -283,7 +285,7 @@ class Board:
                 draw_row = 7 - row if flip else row
                 draw_col = 7 - col if flip else col
 
-                blue_color = self.LIGHT_BLUE if self.get_cell_color(col, row) == 'g' else self.BLUE
+                blue_color = self.BLUE if self.get_cell_color(col, row) == 'g' else self.LIGHT_BLUE
                 self.draw_cell_color(draw_row,draw_col, blue_color)
 
             else:
@@ -303,15 +305,16 @@ class Board:
                 draw_new_col = 7 - new_col if flip else new_col
 
                 # Draw old square
-                yellow_color = self.LIGHT_YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.YELLOW
+                yellow_color = self.YELLOW if self.get_cell_color(old_row, old_col) == 'g' else self.LIGHT_YELLOW
                 self.draw_cell_color(draw_old_row, draw_old_col, yellow_color)
 
                 # Draw new square
-                yellow_color = self.LIGHT_YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.YELLOW
+                yellow_color = self.YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.LIGHT_YELLOW
                 self.draw_cell_color(draw_new_row, draw_new_col, yellow_color)
 
 
             self.draw_board_imgs(flip)
+
 
             if self.selected_position:
                 flip = (self.move_number % 2 == 1)  # flip when black’s turn
@@ -334,7 +337,6 @@ class Board:
                         elif not self.grid[row][col]:
                             # Empty square → gray circle
                             pygame.draw.circle(self.screen, self.GRAY, (x, y), int(self.CELL_SIZE ** 0.5 // 6))
-
 
             pygame.display.flip()
 
@@ -412,7 +414,7 @@ class Board:
         self.screen.fill(self.WHITE)
         for i in range(4*8):
             row = i // 4
-            row += 0 if flip else 1
+            row += 1
             x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + (row % 2) * self.CELL_SIZE ** 0.5
             y = (self.CELL_SIZE **0.5) * (i//4)
             pygame.draw.rect(self.screen,self.GREEN,
@@ -426,14 +428,15 @@ class Board:
 
     def draw_board_imgs(self, flip=False):
         for row in range(8):
-            row_number = row + 1if flip else 8 - row
-            draw_row_number = self.font.render(str(row_number),True,self.BLACK)
-            self.screen.blit(draw_row_number,(0.05 * self.CELL_SIZE ** 0.5, (row + .03) * self.CELL_SIZE ** 0.5))
+            # Row numbers (1–8 on correct side depending on flip)
+            row_number = 8 - row if not flip else row + 1
+            draw_row_number = self.font.render(str(row_number), True, self.BLACK)
+            self.screen.blit(draw_row_number, (0.05 * self.CELL_SIZE ** 0.5, (row + .03) * self.CELL_SIZE ** 0.5))
 
             for col in range(8):
                 piece = self.grid[row][col]
 
-                # If flipping, invert row/col
+                # Flip coordinates for pieces
                 draw_row = 7 - row if flip else row
                 draw_col = 7 - col if flip else col
 
@@ -444,8 +447,11 @@ class Board:
                     img = piece.get_image()
                     self.screen.blit(img, (x, y))
 
+        # Column letters
+        letters = ['a','b','c','d','e','f','g','h']
+        if flip:
+            letters = list(reversed(letters))  # flip order
 
-            # put the column letters
         for i in range(8):
-            col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
-            self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
+            col_letter = self.font.render(letters[i], True, self.BLACK)
+            self.screen.blit(col_letter, ((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))

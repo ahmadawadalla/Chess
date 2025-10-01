@@ -1,5 +1,11 @@
-import pygame
+import pygame, os, sys
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works in dev and when bundled"""
+    if hasattr(sys, "_MEIPASS"):
+        # PyInstaller stores files here
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 class King:
     def __init__(self, color):
@@ -7,15 +13,13 @@ class King:
         self.has_moved = False
         self.just_moved = False
 
-
-
     def is_legal(self, curr_row,curr_col,next_row,next_col, grid, do_not_take):
         x_moved = next_col - curr_col
         y_moved = -1 * (next_row - curr_row)
 
         if not self.has_moved and next_row == curr_row:
             if next_col == 2 and grid[curr_row][0] and not grid[curr_row][0].has_moved:
-                for i in range(1,3):
+                for i in range(1,4):
                     if grid[curr_row][curr_col - i]:
                         return False
 
@@ -50,5 +54,5 @@ class King:
 
     def get_image(self):
         if self.color == 'b':
-            return pygame.image.load('Images/king_b.png')
-        return pygame.image.load('Images/king_w.png')
+            return pygame.image.load(resource_path('Images/king_b.png'))
+        return pygame.image.load(resource_path('Images/king_w.png'))
