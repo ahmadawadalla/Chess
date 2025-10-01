@@ -9,7 +9,7 @@ Supports all standard chess rules including **castling, en passant, pawn promoti
 
 You don’t need Python to play! Download the packaged app for your platform:
 
-- **macOS (Apple Silicon)** → [ChessGame.app.zip](https://github.com/ahmadawadalla/Chess/releases/latest/download/ChessGame.zip)
+- **macOS (Apple Silicon)** → [ChessGame.zip](https://github.com/ahmadawadalla/Chess/releases/latest/download/ChessGame.zip)
 - **Windows** → (coming soon)  
 - **Linux** → (coming soon)
 
