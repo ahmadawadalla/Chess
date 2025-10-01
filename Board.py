@@ -1,4 +1,5 @@
 import copy
+import time
 
 from Pawn import Pawn
 from Knight import Knight
@@ -30,7 +31,7 @@ class Board:
         self.LIGHT_BLUE = (8,232,222)
         self.YELLOW = (200,220,10)
         self.LIGHT_YELLOW = (255,255,50)
-        self.BLACK = (0,0,0)
+        self.BLACK = (30,30,30)
         self.LIGHT_BLACK = (150,150,150)
         self.GRAY = (211,211,211)
         self.RED = (255,0,0)
@@ -41,6 +42,7 @@ class Board:
         self.CELL_SIZE = CELL_SIZE
 
         self.font = pygame.font.Font(None,50)
+        self.time_moved = time.time() - 2
 
     def get_position(self,position): # will output [row,col]
         # position will look like ['f',2]
@@ -171,23 +173,7 @@ class Board:
         self.all_move_positions.append(None)
         while running:
             flip = self.move_number % 2 == 1
-            self.screen.fill(self.WHITE)
-            if flip:
-                for i in range(4*8):
-                    row = i // 4
-                    x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row) % 2) * self.CELL_SIZE ** 0.5
-                    y = (self.CELL_SIZE **0.5) * (i//4)
-                    pygame.draw.rect(self.screen,self.GREEN,
-                                     pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                     )
-            else:
-                for i in range(4*8):
-                    row = i // 4
-                    x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                    y = (self.CELL_SIZE **0.5) * (i//4)
-                    pygame.draw.rect(self.screen,self.GREEN,
-                                     pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                     )
+            self.draw_board_cells(flip)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -236,14 +222,9 @@ class Board:
                         # selecting where to move
                         elif new_piece is None or old_piece and new_piece.color != old_piece.color:
                             old_row, old_col = self.selected_position[0], self.selected_position[1]
-                            old_x = self.selected_position[1] * self.CELL_SIZE ** 0.5
-                            old_y = self.selected_position[0] * self.CELL_SIZE ** 0.5
-                            new_x = new_col * self.CELL_SIZE ** 0.5
-                            new_y = new_row * self.CELL_SIZE ** 0.5
                             check_if_captured = self.grid[new_row][new_col]
 
                             if self.move(old_row,old_col,new_row,new_col, False):
-                                self.draw_movement(self.screen,self.selected_piece, old_x, old_y, new_x, new_y)
                                 if check_if_captured:
                                     move_noise = pygame.mixer.Sound("Sounds/capture.mp3")
                                 else:
@@ -276,7 +257,7 @@ class Board:
                         if self.move_number >= 1:
                             self.move_number -= 1
                             self.grid = self.get_grid_by_value(self.all_moves[self.move_number],8,8)
-                            if self.all_move_positions[self.move_number] == None:
+                            if self.all_move_positions[self.move_number] is None:
                                 self.move_positions = None
                             else:
                                 self.move_positions = self.get_grid_by_value(self.all_move_positions[self.move_number],2,2)
@@ -302,34 +283,11 @@ class Board:
                 draw_row = 7 - row if flip else row
                 draw_col = 7 - col if flip else col
 
-                blue_color = self.LIGHT_BLUE
-                if self.get_cell_color(col, row) == 'g':
-                    blue_color = self.BLUE
-
-                pygame.draw.rect(
-                    self.screen,
-                    blue_color,
-                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_col, self.CELL_SIZE ** 0.5 * draw_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
-                )
+                blue_color = self.LIGHT_BLUE if self.get_cell_color(col, row) == 'g' else self.BLUE
+                self.draw_cell_color(draw_row,draw_col, blue_color)
 
             else:
-                self.screen.fill(self.WHITE)
-                if flip:
-                    for i in range(4*8):
-                        row = i // 4
-                        x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row) % 2) * self.CELL_SIZE ** 0.5
-                        y = (self.CELL_SIZE **0.5) * (i//4)
-                        pygame.draw.rect(self.screen,self.GREEN,
-                                         pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                         )
-                else:
-                    for i in range(4*8):
-                        row = i // 4
-                        x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                        y = (self.CELL_SIZE **0.5) * (i//4)
-                        pygame.draw.rect(self.screen,self.GREEN,
-                                         pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                         )
+                self.draw_board_cells(flip)
 
             # adding a yellow marker for the previous move
             if self.move_positions and self.move_number > 0:
@@ -345,45 +303,15 @@ class Board:
                 draw_new_col = 7 - new_col if flip else new_col
 
                 # Draw old square
-                yellow_color = self.LIGHT_YELLOW
-                if self.get_cell_color(old_row, old_col) == 'g':
-                    yellow_color = self.YELLOW
-
-                pygame.draw.rect(self.screen, yellow_color,
-                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_old_col, self.CELL_SIZE ** 0.5 * draw_old_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
-                )
+                yellow_color = self.LIGHT_YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.YELLOW
+                self.draw_cell_color(draw_old_row, draw_old_col, yellow_color)
 
                 # Draw new square
-                yellow_color = self.LIGHT_YELLOW
-                if self.get_cell_color(new_row, new_col) == 'g':
-                    yellow_color = self.YELLOW
-
-                pygame.draw.rect(self.screen, yellow_color,
-                    pygame.Rect(self.CELL_SIZE ** 0.5 * draw_new_col, self.CELL_SIZE ** 0.5 * draw_new_row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
-                )
+                yellow_color = self.LIGHT_YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.YELLOW
+                self.draw_cell_color(draw_new_row, draw_new_col, yellow_color)
 
 
-
-            for row in range(8):
-                for col in range(8):
-                    piece = self.grid[row][col]
-
-                    # If flipping, invert row/col
-                    draw_row = 7 - row if flip else row
-                    draw_col = 7 - col if flip else col
-
-                    x = (self.CELL_SIZE ** 0.5) * draw_col
-                    y = (self.CELL_SIZE ** 0.5) * draw_row
-
-                    if piece:
-                        img = piece.get_image()
-                        self.screen.blit(img, (x, y))
-
-            # put the column letters
-            for i in range(8):
-                col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
-                self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
-
+            self.draw_board_imgs(flip)
 
             if self.selected_position:
                 flip = (self.move_number % 2 == 1)  # flip when black’s turn
@@ -408,118 +336,32 @@ class Board:
                             pygame.draw.circle(self.screen, self.GRAY, (x, y), int(self.CELL_SIZE ** 0.5 // 6))
 
 
-
             pygame.display.flip()
-
-    def draw_movement(self, screen, piece, curr_x, curr_y, next_x, next_y):
-        x_direction = 0
-        y_direction = 0
-
-        x_moved = next_x - curr_x
-        y_moved = next_y - curr_y
-
-        if next_x - curr_x != 0:
-            x_direction = x_moved / abs(x_moved)
-        if next_y - curr_y != 0:
-            y_direction = y_moved / abs(y_moved)
-
-
-        while (curr_x,curr_y) != (next_x,next_y):
-            pygame.time.delay(1)
-
-            screen.fill(self.WHITE)
-            for i in range(4*8):
-                row = i // 4
-                x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                y = (self.CELL_SIZE **0.5) * (i//4)
-                pygame.draw.rect(screen,self.GREEN,
-                                 pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
-
-
-            row = 0
-            for line in self.grid:
-                # start of the row, put the row numbers
-                row_number = self.font.render(str(8-row),True,self.BLACK)
-                self.screen.blit(row_number,(0.05 * self.CELL_SIZE ** 0.5,(row + 0.05) * self.CELL_SIZE ** 0.5))
-                col = 0
-                for piece_img in line:
-                    x = (self.CELL_SIZE **0.5) * col
-                    y = (self.CELL_SIZE **0.5) * row
-
-                    # move piece
-                    if piece_img == piece:
-                        img = piece.get_image()
-                        screen.blit(img,(curr_x,curr_y))
-
-                    # not moving peices
-                    elif piece_img:
-                        img = piece_img.get_image()
-                        self.screen.blit(img,(x,y))
-
-                    col += 1
-                row += 1
-
-            if not isinstance(piece,Knight):
-                curr_x += 2*x_direction * (25/4)
-                curr_y += 2*y_direction * (25/4)
-            else:
-                if abs(x_moved) > abs(y_moved): # moves in x direction more
-                    curr_x += 8*x_direction
-                    curr_y += 4*y_direction
-                else: # moves in y direction more
-                    curr_x += 4*x_direction
-                    curr_y += 8*y_direction
-
-        # put the column letters
-        for i in range(8):
-            col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
-            self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
-
-        pygame.display.flip()
 
     def draw_pawn_options(self, pawn_row, pawn_col, color):
         running = True
         while running:
-            self.screen.fill(self.WHITE)
-            for i in range(4*8):
-                row = i // 4
-                x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + ((row + 1) % 2) * self.CELL_SIZE ** 0.5
-                y = (self.CELL_SIZE **0.5) * (i//4)
-                pygame.draw.rect(self.screen,self.GREEN,
-                                 pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
-                                 )
+            flip = self.move_number % 2 == 1
+            self.draw_board_cells(flip)
 
-            row = 0
-            for line in self.grid:
-                # start of the row, put the row numbers
-                row_number = self.font.render(str(8-row),True,self.BLACK)
-                self.screen.blit(row_number,(0.05 * self.CELL_SIZE ** 0.5,(row + 0.05) * self.CELL_SIZE ** 0.5))
-                col = 0
-                for piece in line:
-                    x = (self.CELL_SIZE **0.5) * col
-                    y = (self.CELL_SIZE **0.5) * row
-
-                    if piece:
-                        img = piece.get_image()
-                        self.screen.blit(img,(x,y))
-
-                    col += 1
-                row += 1
-
-            # put the column letters
-            for i in range(8):
-                col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
-                self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
-
-            pygame.draw.rect(self.screen,self.LIGHT_BLACK,
-                             pygame.Rect(self.CELL_SIZE ** 0.5 * 1.5, self.CELL_SIZE ** 0.5 * 2.5, self.CELL_SIZE **0.5 * 5, self.CELL_SIZE ** 0.5 * 2)
-                             )
+            self.draw_board_imgs(flip)
 
             queen = Queen(color).get_image()
             rook = Rook(color).get_image()
             bishop = Bishop(color).get_image()
             knight = Knight(color).get_image()
+
+            pygame.draw.rect(self.screen, self.BLACK,
+                             pygame.Rect(self.CELL_SIZE ** 0.5 * 1.9, self.CELL_SIZE ** 0.5 * 2.9, self.CELL_SIZE ** 0.5 * 4.2, self.CELL_SIZE ** 0.5 * 1.2)
+                             )
+
+            for col in range(4):
+                self.draw_cell_color(3,col + 2,self.WHITE)
+
+            for col in range(3):
+                pygame.draw.rect(self.screen, self.BLACK,
+                                 pygame.Rect(self.CELL_SIZE ** 0.5 * (col + 2.95), self.CELL_SIZE ** 0.5 * 3, self.CELL_SIZE ** 0.5 * .1, self.CELL_SIZE ** 0.5)
+                                 )
 
             self.screen.blit(queen,(self.CELL_SIZE ** 0.5 * 2, self.CELL_SIZE ** 0.5 * 3))
             self.screen.blit(rook,(self.CELL_SIZE ** 0.5 * 3, self.CELL_SIZE ** 0.5 * 3))
@@ -553,16 +395,8 @@ class Board:
                                 running = False
 
     def get_cell_color(self,row,col):
-        if row % 2 == 0: # even row
-            if col % 2 == 0: # even col
-                return 'w' # is white
-            else: # odd col
-                return 'g' # is green
-        else: # odd row
-            if col % 2 == 0: # even col
-                return 'g' # is green
-            else: # odd col
-                return 'w' # is white
+        return 'w' if (row + col) % 2 == 0 else 'g'
+
 
     def get_grid_by_value(self,grid, num_row, num_col):
         array = []
@@ -573,3 +407,45 @@ class Board:
             array.append(line)
 
         return array
+
+    def draw_board_cells(self,flip=False):
+        self.screen.fill(self.WHITE)
+        for i in range(4*8):
+            row = i // 4
+            row += 0 if flip else 1
+            x = ((self.CELL_SIZE **0.5) * 2 * i) % self.GRID_WIDTH + (row % 2) * self.CELL_SIZE ** 0.5
+            y = (self.CELL_SIZE **0.5) * (i//4)
+            pygame.draw.rect(self.screen,self.GREEN,
+                             pygame.Rect(x, y, self.CELL_SIZE **0.5, self.CELL_SIZE ** 0.5)
+                             )
+
+    def draw_cell_color(self, row, col, color):
+        pygame.draw.rect(self.screen, color,
+                         pygame.Rect(self.CELL_SIZE ** 0.5 * col, self.CELL_SIZE ** 0.5 * row, self.CELL_SIZE ** 0.5, self.CELL_SIZE ** 0.5)
+                         )
+
+    def draw_board_imgs(self, flip=False):
+        for row in range(8):
+            row_number = row + 1if flip else 8 - row
+            draw_row_number = self.font.render(str(row_number),True,self.BLACK)
+            self.screen.blit(draw_row_number,(0.05 * self.CELL_SIZE ** 0.5, (row + .03) * self.CELL_SIZE ** 0.5))
+
+            for col in range(8):
+                piece = self.grid[row][col]
+
+                # If flipping, invert row/col
+                draw_row = 7 - row if flip else row
+                draw_col = 7 - col if flip else col
+
+                x = (self.CELL_SIZE ** 0.5) * draw_col
+                y = (self.CELL_SIZE ** 0.5) * draw_row
+
+                if piece:
+                    img = piece.get_image()
+                    self.screen.blit(img, (x, y))
+
+
+            # put the column letters
+        for i in range(8):
+            col_letter = self.font.render(['a','b','c','d','e','f','g','h'][i],True,self.BLACK)
+            self.screen.blit(col_letter,((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
