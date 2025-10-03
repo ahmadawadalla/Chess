@@ -47,6 +47,10 @@ class Board:
         self.CELL_SIZE = CELL_SIZE
 
         self.font = pygame.font.Font(None,50)
+        self.waiting = False
+        self.wait_start = 0
+        self.flip = False
+        self.pending_flip = False
 
     def get_position(self,position): # will output [row,col]
         # position will look like ['f',2]
@@ -176,13 +180,15 @@ class Board:
         self.all_moves.append(self.get_grid_by_value(self.grid,8,8))
         self.all_move_positions.append(None)
         while running:
-            flip = self.move_number % 2 == 1
+            flip = self.flip
             self.draw_board_cells(flip)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
+                if self.waiting:
+                    continue
                 # Check for mouse button down event
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1: # left mouse click
@@ -228,6 +234,7 @@ class Board:
                             old_row, old_col = self.selected_position[0], self.selected_position[1]
                             check_if_captured = self.grid[new_row][new_col]
 
+                            moved_piece = self.grid[old_row][old_col]
                             if self.move(old_row,old_col,new_row,new_col, False):
                                 if check_if_captured:
                                     move_noise = pygame.mixer.Sound(resource_path("Sounds/capture.mp3"))
@@ -235,8 +242,10 @@ class Board:
                                     move_noise = pygame.mixer.Sound(resource_path("Sounds/move-self.mp3"))
 
                                 pygame.mixer.Sound.play(move_noise)
-
                                 self.grid[old_row][old_col] = None
+
+                                self.draw_animation(old_row,old_col,new_row,new_col, moved_piece)
+
                                 self.move_number += 1
 
                                 self.all_moves.insert(self.move_number,self.get_grid_by_value(self.grid,8,8))
@@ -252,8 +261,13 @@ class Board:
                                 self.all_selected_pieces.insert(self.move_number,self.selected_piece)
                                 self.all_selected_pieces = self.all_selected_pieces[:self.move_number + 1]
 
+                                self.waiting = True
+                                self.wait_start = pygame.time.get_ticks()
+                                self.pending_flip = True
+
                             self.selected_piece = None
                             self.selected_position = None
+
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -293,7 +307,7 @@ class Board:
 
             # adding a yellow marker for the previous move
             if self.move_positions and self.move_number > 0:
-                flip = (self.move_number % 2 == 1)  # black’s turn → flipped
+                flip = self.flip  # black’s turn → flipped
 
                 old_row, old_col = self.move_positions[0]
                 new_row, new_col = self.move_positions[1]
@@ -312,12 +326,11 @@ class Board:
                 yellow_color = self.YELLOW if self.get_cell_color(new_row, new_col) == 'g' else self.LIGHT_YELLOW
                 self.draw_cell_color(draw_new_row, draw_new_col, yellow_color)
 
-
             self.draw_board_imgs(flip)
 
 
             if self.selected_position:
-                flip = (self.move_number % 2 == 1)  # flip when black’s turn
+                flip = self.flip  # flip when black’s turn
                 sel_row, sel_col = self.selected_position
 
                 for i in self.possible_moves:
@@ -338,12 +351,63 @@ class Board:
                             # Empty square → gray circle
                             pygame.draw.circle(self.screen, self.GRAY, (x, y), int(self.CELL_SIZE ** 0.5 // 6))
 
+            if self.waiting:
+                if pygame.time.get_ticks() - self.wait_start >= 350:
+                    self.waiting = False
+                    if self.pending_flip:
+                        self.flip = not self.flip
+                        self.pending_flip = False
+
             pygame.display.flip()
+
+    def draw_animation(self, curr_row, curr_col, next_row, next_col, piece):
+        # Convenience: tile size in pixels (matches the rest of your codebase)
+        tile = int(self.CELL_SIZE ** 0.5)
+
+        def board_to_pixel(row, col):
+            if self.flip:
+                draw_row = 7 - row
+                draw_col = 7 - col
+            else:
+                draw_row = row
+                draw_col = col
+            return draw_col * tile, draw_row * tile
+
+        start_x, start_y = board_to_pixel(curr_row, curr_col)
+        end_x,   end_y   = board_to_pixel(next_row, next_col)
+
+        frames = 15         # animation smoothness
+        dx = (end_x - start_x) / frames
+        dy = (end_y - start_y) / frames
+
+        x, y = start_x, start_y
+
+        for i in range(frames):
+            # Temporarily hide the destination occupant (which is now the moved piece)
+            saved_dest = self.grid[next_row][next_col]
+            self.grid[next_row][next_col] = None
+
+            # Draw the board and all other pieces in the correct orientation
+            self.draw_board_cells(self.flip)
+            self.draw_board_imgs(self.flip)
+
+            # Draw the moving piece on top at its interpolated pixel position
+            self.screen.blit(piece.get_image(), (x, y))
+            pygame.display.flip()
+
+            # Restore the destination piece in the grid for the next frame
+            self.grid[next_row][next_col] = saved_dest
+
+            x += dx
+            y += dy
+            pygame.time.delay(16)  # ~60 FPS
+
+
 
     def draw_pawn_options(self, pawn_row, pawn_col, color):
         running = True
         while running:
-            flip = self.move_number % 2 == 1
+            flip = self.flip
             self.draw_board_cells(flip)
 
             self.draw_board_imgs(flip)
@@ -449,9 +513,6 @@ class Board:
 
         # Column letters
         letters = ['a','b','c','d','e','f','g','h']
-        if flip:
-            letters = list(reversed(letters))  # flip order
-
         for i in range(8):
             col_letter = self.font.render(letters[i], True, self.BLACK)
             self.screen.blit(col_letter, ((i + 0.75) * self.CELL_SIZE ** 0.5, 7.65 * self.CELL_SIZE ** 0.5))
