@@ -1,6 +1,5 @@
-import pygame
+import pygame, os, sys
 from Board import Board
-import os, sys
 
 def resource_path(relative_path):
     """Get absolute path to resource, works in dev and when bundled"""
